@@ -1,36 +1,40 @@
 package com.crisesmanagment.crisesmanagment.service;
 
 import com.crisesmanagment.crisesmanagment.dto.RiskEventResponseDto;
+import com.crisesmanagment.crisesmanagment.model.RiskEvent;
+import com.crisesmanagment.crisesmanagment.repo.RiskEventRepository;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
-import reactor.core.publisher.Mono;
 
-import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @Service
 public class GeminiExtractionService {
 
     private final WebClient geminiWebClient;
+    private final RiskEventRepository riskEventRepository;
 
-    public GeminiExtractionService(@Qualifier("geminiWebClient") WebClient geminiWebClient) {
+    public GeminiExtractionService(@Qualifier("geminiWebClient") WebClient geminiWebClient,
+                                   RiskEventRepository riskEventRepository) {
         this.geminiWebClient = geminiWebClient;
+        this.riskEventRepository = riskEventRepository;
     }
 
-    /**
-     * Calls the Gemini generate endpoint with the raw text and returns the full response as a string in extractedJson.
-     * This is a thin integration layer; consider improving request/response shape and error handling later.
-     */
     public RiskEventResponseDto extractAndSave(String rawText) {
-        Map<String, Object> body = new HashMap<>();
-        body.put("prompt", rawText);
-        // Some Gemini endpoints expect a model-specific wrapper; using raw POST to configured URL so apiUrl controls exact endpoint.
+        // Gemini generateContent expects this exact shape
+        Map<String, Object> body = Map.of(
+                "contents", List.of(
+                        Map.of("parts", List.of(Map.of("text", rawText)))
+                )
+        );
 
         String responseBody;
         try {
             responseBody = geminiWebClient.post()
+                    .uri("/v1beta/models/gemini-1.5-flash:generateContent")
                     .accept(MediaType.APPLICATION_JSON)
                     .contentType(MediaType.APPLICATION_JSON)
                     .bodyValue(body)
@@ -38,15 +42,23 @@ public class GeminiExtractionService {
                     .bodyToMono(String.class)
                     .block();
         } catch (Exception e) {
-            // on error, return a DTO with error message in extractedJson
             RiskEventResponseDto err = new RiskEventResponseDto();
             err.setId(-1L);
-            err.setExtractedJson("{\"error\": \"" + e.getMessage().replaceAll("\"","\\\"") + "\"}");
+            err.setExtractedJson("{\"error\": \"" + e.getMessage() + "\"}");
             return err;
         }
 
+        RiskEvent event = RiskEvent.builder()
+                .source("gemini")
+                .eventType("UNCLASSIFIED") // TODO: parse from Gemini response later
+                .severity(0)
+                .rawText(rawText)
+                .extractedJson(responseBody)
+                .build();
+        RiskEvent saved = riskEventRepository.save(event);
+
         RiskEventResponseDto dto = new RiskEventResponseDto();
-        dto.setId(1L);
+        dto.setId(saved.getId());
         dto.setExtractedJson(responseBody == null ? "" : responseBody);
         return dto;
     }
