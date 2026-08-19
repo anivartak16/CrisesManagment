@@ -2,6 +2,7 @@ package com.crisesmanagment.crisesmanagment.Controller;
 
 import com.crisesmanagment.crisesmanagment.model.Supplier;
 import lombok.RequiredArgsConstructor;
+import com.crisesmanagment.crisesmanagment.exception.ResourceNotFoundException;
 import com.crisesmanagment.crisesmanagment.repo.SupplierRepository;
 import org.springframework.web.bind.annotation.*;
 
@@ -22,6 +23,6 @@ public class SupplierController {
     @GetMapping("/{id}")
     public Supplier getSupplierById(@PathVariable Long id) {
         return supplierRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Supplier not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Supplier not found with id: " + id));
     }
 }
