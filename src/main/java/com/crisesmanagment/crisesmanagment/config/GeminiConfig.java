@@ -4,7 +4,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpHeaders;
-import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.client.RestClient;
 
 @Configuration
 public class GeminiConfig {
@@ -15,13 +15,12 @@ public class GeminiConfig {
     @Value("${gemini.api.url:}")
     private String apiUrl;
 
-    @Bean(name = "geminiWebClient")
-    public WebClient geminiWebClient(WebClient.Builder builder) {
-        WebClient webClient = builder
+    @Bean(name = "geminiRestClient")
+    public RestClient geminiRestClient() {
+        return RestClient.builder()
                 .baseUrl(apiUrl)
-                .defaultHeader(HttpHeaders.AUTHORIZATION, "Bearer " + apiKey)
+                .defaultHeader("x-goog-api-key", apiKey)
                 .defaultHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                 .build();
-        return webClient;
     }
 }
