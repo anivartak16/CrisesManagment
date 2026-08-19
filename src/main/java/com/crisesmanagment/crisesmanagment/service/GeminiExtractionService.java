@@ -34,7 +34,7 @@ public class GeminiExtractionService {
         String responseBody;
         try {
             responseBody = geminiWebClient.post()
-                    .uri("/v1beta/models/gemini-1.5-flash:generateContent")
+                    .uri("/v1beta/models/gemini-2.5-flash:generateContent")
                     .accept(MediaType.APPLICATION_JSON)
                     .contentType(MediaType.APPLICATION_JSON)
                     .bodyValue(body)
