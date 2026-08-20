@@ -7,7 +7,9 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
 
+import java.net.URI;
 import java.util.List;
 import java.util.Map;
 
@@ -31,16 +33,32 @@ public class GeminiExtractionService {
                 )
         );
 
+        // Built as an absolute URI object (not a template string) so Spring's
+        // UriComponentsBuilder can't re-encode the ':' in "gemini-2.5-flash:generateContent"
+        // into %3A, which Google's API does not recognise (causes a 404).
+        URI uri = URI.create(
+                "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent");
+
         String responseBody;
         try {
             responseBody = geminiWebClient.post()
-                    .uri("/v1beta/models/gemini-2.5-flash:generateContent")
+                    .uri(uri)
                     .accept(MediaType.APPLICATION_JSON)
                     .contentType(MediaType.APPLICATION_JSON)
                     .bodyValue(body)
                     .retrieve()
                     .bodyToMono(String.class)
                     .block();
+        } catch (WebClientResponseException e) {
+            // getResponseBodyAsString() has Google's real error message —
+            // e.getMessage() alone only gives the generic "404 Not Found from POST ..." line.
+            System.out.println("GEMINI ERROR STATUS: " + e.getStatusCode());
+            System.out.println("GEMINI ERROR BODY: " + e.getResponseBodyAsString());
+
+            RiskEventResponseDto err = new RiskEventResponseDto();
+            err.setId(-1L);
+            err.setExtractedJson("{\"error\": \"" + e.getStatusCode() + " - " + e.getResponseBodyAsString().replace("\"", "'") + "\"}");
+            return err;
         } catch (Exception e) {
             RiskEventResponseDto err = new RiskEventResponseDto();
             err.setId(-1L);
