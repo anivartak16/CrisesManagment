@@ -29,10 +29,10 @@ export const api = {
   getRoute: (id) => request(`/api/routes/${id}`),
 
   // Crisis pipeline: log event -> simulate scenario -> read recommendations
-  createEvent: (rawText) =>
+  createEvent: ({ rawText, routeId, severity, eventType, durationDays }) =>
     request("/api/events", {
       method: "POST",
-      body: JSON.stringify({ rawText }),
+      body: JSON.stringify({ rawText, routeId, severity, eventType, durationDays }),
     }),
   simulateScenario: (eventId) =>
     request(`/api/scenarios/${eventId}/simulate`, { method: "POST" }),

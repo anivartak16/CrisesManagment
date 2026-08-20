@@ -500,7 +500,8 @@ tbody tr:hover {
 }
 
 .field textarea,
-.field input {
+.field input,
+.field select {
   background: var(--ink);
   border: 1px solid var(--line);
   border-radius: var(--radius);
@@ -511,7 +512,8 @@ tbody tr:hover {
 }
 
 .field textarea:focus,
-.field input:focus {
+.field input:focus,
+.field select:focus {
   border-color: var(--amber);
 }
 
@@ -678,6 +680,47 @@ tbody tr:hover {
   font-size: 13.5px;
   margin: 0;
   line-height: 1.6;
+}
+
+.badge-optimal {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--ink);
+  background: var(--amber);
+  border-radius: 999px;
+  padding: 2px 8px;
+  margin-left: 10px;
+  vertical-align: middle;
+}
+
+.allocation-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 12px;
+  font-size: 12.5px;
+}
+
+.allocation-table th {
+  text-align: left;
+  color: var(--muted);
+  font-weight: 500;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  padding: 4px 8px;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.allocation-table td {
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.allocation-table td.num {
+  text-align: right;
+  font-family: var(--font-mono);
 }
 
 @media (max-width: 860px) {
