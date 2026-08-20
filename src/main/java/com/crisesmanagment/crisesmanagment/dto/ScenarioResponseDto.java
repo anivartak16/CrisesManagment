@@ -6,4 +6,8 @@ import lombok.Data;
 public class ScenarioResponseDto {
     private Long id;
     private String summary;
+    private String status;
+    private Long disruptedRouteId;
+    private String disruptedRouteName;
+    private Double supplyGapBarrels;
 }

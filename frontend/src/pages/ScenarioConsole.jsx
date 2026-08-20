@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { api } from "../api.js";
 import ErrorBanner from "../components/ErrorBanner.jsx";
 import RiskGauge from "../components/RiskGauge.jsx";
@@ -11,23 +11,18 @@ function prettyJson(raw) {
   }
 }
 
-function extractSeverity(raw) {
-  try {
-    const parsed = JSON.parse(raw);
-    const val = parsed.severity ?? parsed.severityScore ?? null;
-    return typeof val === "number" ? val : null;
-  } catch {
-    return null;
-  }
-}
-
 const SAMPLE_TEXT =
   "Houthi forces launched a missile strike near a tanker transiting the Bab-el-Mandeb strait " +
   "on Tuesday, prompting several shipping lines to reroute crude cargoes via the Cape of Good " +
   "Hope. Insurers have widened war-risk premiums for the corridor for the third time this month.";
 
 export default function ScenarioConsole() {
+  const [routes, setRoutes] = useState(null);
   const [rawText, setRawText] = useState("");
+  const [routeId, setRouteId] = useState("");
+  const [severity, setSeverity] = useState(7);
+  const [eventType, setEventType] = useState("CLOSURE");
+
   const [event, setEvent] = useState(null);
   const [scenario, setScenario] = useState(null);
   const [recommendations, setRecommendations] = useState(null);
@@ -36,6 +31,10 @@ export default function ScenarioConsole() {
   const [loadingScenario, setLoadingScenario] = useState(false);
   const [loadingRecs, setLoadingRecs] = useState(false);
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    api.getRoutes().then(setRoutes).catch((e) => setError(e.message));
+  }, []);
 
   const step1Done = !!event;
   const step2Done = !!scenario;
@@ -48,7 +47,12 @@ export default function ScenarioConsole() {
     setRecommendations(null);
     setLoadingEvent(true);
     try {
-      const result = await api.createEvent(rawText.trim());
+      const result = await api.createEvent({
+        rawText: rawText.trim(),
+        routeId: routeId ? Number(routeId) : null,
+        severity: Number(severity),
+        eventType,
+      });
       setEvent(result);
     } catch (err) {
       setError(err.message);
@@ -84,13 +88,13 @@ export default function ScenarioConsole() {
 
   function resetPipeline() {
     setRawText("");
+    setRouteId("");
+    setSeverity(7);
     setEvent(null);
     setScenario(null);
     setRecommendations(null);
     setError("");
   }
-
-  const severity = event ? extractSeverity(event.extractedJson) : null;
 
   return (
     <div>
@@ -115,8 +119,9 @@ export default function ScenarioConsole() {
           <div className="pipe-body">
             <div className="pipe-label">Log the disruption</div>
             <p className="pipe-desc">
-              Paste raw text — a news report, cable, or field note. It's sent to the extraction
-              service to identify the affected route, event type, and severity.
+              Paste raw text — a news report, cable, or field note — and tag which route it hits
+              and how severe it is. (Manual tagging for now: Gemini extraction stores the raw
+              response but doesn't parse severity/route yet, so the optimizer reads these fields.)
             </p>
 
             <div className="panel panel-pad">
@@ -131,7 +136,42 @@ export default function ScenarioConsole() {
                     placeholder="Paste a disruption report here…"
                   />
                 </div>
-                <div style={{ display: "flex", gap: 10 }}>
+
+                <div style={{ display: "flex", gap: 14, flexWrap: "wrap", marginTop: 4 }}>
+                  <div className="field" style={{ minWidth: 200 }}>
+                    <label htmlFor="routeId">Affected route</label>
+                    <select id="routeId" value={routeId} onChange={(e) => setRouteId(e.target.value)}>
+                      <option value="">— none —</option>
+                      {routes?.map((r) => (
+                        <option key={r.id} value={r.id}>{r.name}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="field" style={{ minWidth: 160 }}>
+                    <label htmlFor="severity">Severity (0-10)</label>
+                    <input
+                      id="severity"
+                      type="number"
+                      min={0}
+                      max={10}
+                      value={severity}
+                      onChange={(e) => setSeverity(e.target.value)}
+                    />
+                  </div>
+
+                  <div className="field" style={{ minWidth: 160 }}>
+                    <label htmlFor="eventType">Event type</label>
+                    <select id="eventType" value={eventType} onChange={(e) => setEventType(e.target.value)}>
+                      <option value="CLOSURE">Closure</option>
+                      <option value="ATTACK">Attack</option>
+                      <option value="SANCTIONS">Sanctions</option>
+                      <option value="CONGESTION">Congestion</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div style={{ display: "flex", gap: 10, marginTop: 14 }}>
                   <button type="submit" className="btn btn-primary" disabled={loadingEvent || !rawText.trim()}>
                     {loadingEvent ? "Extracting…" : "Log event"}
                   </button>
@@ -157,7 +197,7 @@ export default function ScenarioConsole() {
                     <span className="mono" style={{ fontSize: 12, color: "var(--muted)" }}>
                       event #{event.id}
                     </span>
-                    {severity !== null && <RiskGauge value={severity} max={10} size={44} />}
+                    <RiskGauge value={Number(severity)} max={10} size={44} />
                   </div>
                   <pre className="json-block">{prettyJson(event.extractedJson)}</pre>
                 </div>
@@ -199,6 +239,11 @@ export default function ScenarioConsole() {
                         scenario #{scenario.id}
                       </span>
                       <p style={{ marginTop: 8, marginBottom: 0, lineHeight: 1.6 }}>{scenario.summary}</p>
+                      {scenario.supplyGapBarrels > 0 && (
+                        <p className="mono" style={{ marginTop: 6, fontSize: 12, color: "var(--amber)" }}>
+                          supply gap: {scenario.supplyGapBarrels.toLocaleString()} bbl/day
+                        </p>
+                      )}
                     </div>
                   )}
                 </>
@@ -217,8 +262,8 @@ export default function ScenarioConsole() {
           <div className="pipe-body">
             <div className="pipe-label">Review procurement recommendations</div>
             <p className="pipe-desc">
-              Actions the desk should take to cover the resulting supply gap, ranked by the
-              simulation.
+              Ranked allocation plans from the optimizer — cost-optimal, risk-minimal, and
+              balanced — each showing which suppliers cover the gap and at what cost/risk.
             </p>
 
             <div className="panel panel-pad">
@@ -228,12 +273,48 @@ export default function ScenarioConsole() {
                   Simulate a scenario above to generate recommendations.
                 </div>
               ) : loadingRecs ? (
-                <div className="empty-state">Pulling recommendations…</div>
+                <div className="empty-state">Running optimizer…</div>
               ) : recommendations?.length ? (
-                recommendations.map((rec, i) => (
-                  <div className="recommendation-card" key={i}>
-                    <p className="recommendation-action">{rec.action}</p>
-                    <p className="recommendation-reason">{rec.reason}</p>
+                recommendations.map((rec) => (
+                  <div className="recommendation-card" key={rec.id}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+                      <p className="recommendation-action">
+                        {rec.planName}
+                        {rec.isOptimal && <span className="badge-optimal">recommended</span>}
+                      </p>
+                      <span className="mono" style={{ fontSize: 12, color: "var(--muted)" }}>
+                        #{rec.id}
+                      </span>
+                    </div>
+                    <p className="recommendation-reason">
+                      Total cost ${rec.totalCost?.toLocaleString()} · avg risk {(rec.totalRisk * 100).toFixed(1)}%
+                      {rec.supplyGap > 0 && ` · ${rec.supplyGap.toLocaleString()} bbl/day unmet`}
+                    </p>
+
+                    {rec.allocations?.length > 0 && (
+                      <table className="allocation-table">
+                        <thead>
+                          <tr>
+                            <th>Supplier</th>
+                            <th>Route</th>
+                            <th>Barrels/day</th>
+                            <th>Share</th>
+                            <th>Cost</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {rec.allocations.map((a, idx) => (
+                            <tr key={idx}>
+                              <td>{a.supplierName}</td>
+                              <td>{a.routeName}</td>
+                              <td className="num">{a.allocatedBarrels?.toLocaleString()}</td>
+                              <td className="num">{a.allocatedPct?.toFixed(1)}%</td>
+                              <td className="num">${a.cost?.toLocaleString()}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    )}
                   </div>
                 ))
               ) : (

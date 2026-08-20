@@ -16,6 +16,6 @@ public class RiskEventController {
 
     @PostMapping
     public RiskEventResponseDto createEvent(@Valid @RequestBody RiskEventRequestDto request) {
-        return geminiExtractionService.extractAndSave(request.getRawText());
+        return geminiExtractionService.extractAndSave(request);
     }
 }

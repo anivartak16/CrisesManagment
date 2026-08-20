@@ -30,4 +30,10 @@ public class Scenario {
 
     @Column(nullable = false)
     private String status; // e.g. "SIMULATED", "PENDING"
+
+    @Column(name = "disrupted_route_id")
+    private Long disruptedRouteId; // route knocked out/degraded by the triggering event, if any
+
+    @Column(name = "supply_gap_barrels")
+    private Double supplyGapBarrels; // barrels that need to be re-sourced as a result
 }
