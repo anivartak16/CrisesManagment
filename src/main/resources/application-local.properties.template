@@ -2,9 +2,9 @@
 # Copy to application-local.properties and fill values.
 
 # Database
-spring.datasource.url=jdbc:postgresql://localhost:5432/CrisesManagment
-spring.datasource.username=postgres
-spring.datasource.password=postgres
+spring.datasource.url=${DB_URL:jdbc:postgresql://localhost:5432/CrisesManagment}
+spring.datasource.username=${DB_USER:postgres}
+spring.datasource.password=${DB_PASSWORD:root}
 
 # Gemini
 gemini.api.key=YOUR_GEMINI_API_KEY_HERE
