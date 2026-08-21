@@ -10,12 +10,12 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 
-import java.net.URI;
 import java.util.List;
 import java.util.Map;
 
@@ -28,6 +28,12 @@ public class GeminiExtractionService {
     private final RouteRepository routeRepository;
     private final RouteRiskService routeRiskService;
     private final ObjectMapper objectMapper = new ObjectMapper();
+
+    // The Gemini model to call. Previously this was hardcoded to
+    // "gemini-2.5-flash", which Google has since retired (404 NOT_FOUND) —
+    // now driven by config so a model bump never requires a code change again.
+    @Value("${gemini.api.model:gemini-3.6-flash}")
+    private String geminiModel;
 
     public GeminiExtractionService(@Qualifier("geminiWebClient") WebClient geminiWebClient,
                                    RiskEventRepository riskEventRepository,
@@ -42,12 +48,23 @@ public class GeminiExtractionService {
     public RiskEventResponseDto extractAndSave(RiskEventRequestDto request) {
         String rawText = request.getRawText();
 
+        // Build the list of known routes so Gemini can pick the one the
+        // headline is actually about instead of requiring the operator to
+        // tag it by hand every time.
+        List<Route> allRoutes = routeRepository.findAll();
+        String routeList = allRoutes.isEmpty()
+                ? "(no routes on file)"
+                : allRoutes.stream().map(Route::getName).reduce((a, b) -> a + ", " + b).orElse("");
+
         // Force Gemini to return ONLY strict JSON — this is what makes severity
-        // real instead of always defaulting to 0/manual-override.
+        // real instead of always defaulting to 0/manual-override. Now also asks
+        // Gemini to pick the affected route by name so the "Affected route"
+        // field can be auto-detected instead of always requiring manual tagging.
         String prompt = "Analyze this crude oil supply-chain news headline and respond with ONLY "
                 + "raw JSON, no markdown, no explanation, in exactly this shape: "
                 + "{\"severity\": <integer 0-10>, \"eventType\": \"<CLOSURE|SANCTIONS|ATTACK|WEATHER|OTHER>\", "
-                + "\"durationDays\": <integer>}. Headline: \"" + rawText + "\"";
+                + "\"durationDays\": <integer>, \"routeName\": \"<one of: " + routeList + ", or null if none clearly match>\"}. "
+                + "Headline: \"" + rawText + "\"";
 
         Map<String, Object> body = Map.of(
                 "contents", List.of(
@@ -55,13 +72,10 @@ public class GeminiExtractionService {
                 )
         );
 
-        URI uri = URI.create(
-                "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent");
-
         String responseBody;
         try {
             responseBody = geminiWebClient.post()
-                    .uri(uri)
+                    .uri("/v1beta/models/" + geminiModel + ":generateContent")
                     .accept(MediaType.APPLICATION_JSON)
                     .contentType(MediaType.APPLICATION_JSON)
                     .bodyValue(body)
@@ -75,16 +89,13 @@ public class GeminiExtractionService {
             responseBody = "{\"error\": \"" + e.getMessage() + "\"}";
         }
 
-        Route route = request.getRouteId() != null
-                ? routeRepository.findById(request.getRouteId()).orElse(null)
-                : null;
-
         // Try parsing Gemini's structured JSON out of the response envelope.
         // Falls back to manual-override fields (or defaults) if parsing fails —
         // so a bad/unexpected Gemini response never crashes event creation.
         Integer parsedSeverity = null;
         String parsedEventType = null;
         Integer parsedDuration = null;
+        String parsedRouteName = null;
         try {
             JsonNode root = objectMapper.readTree(responseBody);
             String candidateText = root.path("candidates").get(0)
@@ -94,15 +105,35 @@ public class GeminiExtractionService {
             parsedSeverity = parsed.path("severity").asInt();
             parsedEventType = parsed.path("eventType").asText();
             parsedDuration = parsed.path("durationDays").asInt();
+            if (parsed.hasNonNull("routeName")) {
+                parsedRouteName = parsed.path("routeName").asText();
+            }
         } catch (Exception e) {
             log.warn("Could not parse structured severity from Gemini response, using overrides/defaults: {}", e.getMessage());
+        }
+
+        // Route resolution priority: explicit routeId from the request wins
+        // (manual tagging still overrides), otherwise fall back to whatever
+        // route Gemini matched against the headline by name.
+        Route route = null;
+        boolean autoDetectedRoute = false;
+        if (request.getRouteId() != null) {
+            route = routeRepository.findById(request.getRouteId()).orElse(null);
+        } else if (parsedRouteName != null && !parsedRouteName.isBlank()
+                && !"null".equalsIgnoreCase(parsedRouteName.trim())) {
+            String needle = parsedRouteName.trim();
+            route = allRoutes.stream()
+                    .filter(r -> r.getName().equalsIgnoreCase(needle) || r.getName().contains(needle) || needle.contains(r.getName()))
+                    .findFirst()
+                    .orElse(null);
+            autoDetectedRoute = route != null;
         }
 
         RiskEvent event = RiskEvent.builder()
                 .source("gemini")
                 .route(route)
                 .eventType(request.getEventType() != null ? request.getEventType()
-                        : (parsedEventType != null ? parsedEventType : "UNCLASSIFIED"))
+                        : (parsedEventType != null && !parsedEventType.isBlank() ? parsedEventType : "UNCLASSIFIED"))
                 .severity(request.getSeverity() != null ? request.getSeverity()
                         : (parsedSeverity != null ? parsedSeverity : 0))
                 .durationDays(request.getDurationDays() != null ? request.getDurationDays() : parsedDuration)
@@ -120,6 +151,12 @@ public class GeminiExtractionService {
         RiskEventResponseDto dto = new RiskEventResponseDto();
         dto.setId(saved.getId());
         dto.setExtractedJson(responseBody == null ? "" : responseBody);
+        dto.setSeverity(saved.getSeverity());
+        dto.setEventType(saved.getEventType());
+        dto.setDurationDays(saved.getDurationDays());
+        dto.setRouteId(route != null ? route.getId() : null);
+        dto.setRouteName(route != null ? route.getName() : null);
+        dto.setAutoDetectedRoute(autoDetectedRoute);
         return dto;
     }
 }

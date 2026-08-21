@@ -1,6 +1,7 @@
 package com.crisesmanagment.crisesmanagment.config;
 
 import io.netty.channel.ChannelOption;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.client.reactive.ReactorClientHttpConnector;
@@ -11,6 +12,9 @@ import java.time.Duration;
 
 @Configuration
 public class MarketDataWebClientConfig {
+
+    @Value("${weather.api.base-url:https://api.open-meteo.com}")
+    private String weatherApiBaseUrl;
 
     @Bean(name = "eiaWebClient")
     public WebClient eiaWebClient(WebClient.Builder builder) {
@@ -24,6 +28,20 @@ public class MarketDataWebClientConfig {
                 .responseTimeout(Duration.ofSeconds(20));
         return builder
                 .baseUrl("https://api.gdeltproject.org/api/v2")
+                .clientConnector(new ReactorClientHttpConnector(httpClient))
+                .build();
+    }
+
+    // Open-Meteo is free and requires no API key, so this client is always
+    // ready to use — unlike eiaWebClient/geminiWebClient there's no key to be
+    // missing here.
+    @Bean(name = "weatherWebClient")
+    public WebClient weatherWebClient(WebClient.Builder builder) {
+        HttpClient httpClient = HttpClient.create()
+                .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 10000)
+                .responseTimeout(Duration.ofSeconds(10));
+        return builder
+                .baseUrl(weatherApiBaseUrl)
                 .clientConnector(new ReactorClientHttpConnector(httpClient))
                 .build();
     }

@@ -38,6 +38,9 @@ export const api = {
     request(`/api/scenarios/${eventId}/simulate`, { method: "POST" }),
   getScenario: (id) => request(`/api/scenarios/${id}`),
   getRecommendations: (scenarioId) => request(`/api/recommendations/${scenarioId}`),
+
+  // Weather: which routes are currently affected by weather (wind/storms)
+  getWeatherRisks: () => request("/api/weather/routes"),
 };
 
 export { BASE_URL };

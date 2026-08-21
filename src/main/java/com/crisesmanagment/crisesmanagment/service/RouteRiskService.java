@@ -65,6 +65,14 @@ public class RouteRiskService {
                 activeSeverityBoost += (e.getSeverity() / 10.0) * 0.3;
             }
         }
+        // Cap the *sum* of stacked active events, not just the final risk.
+        // Without this, repeated testing (or a busy news day with many
+        // low/medium events) permanently pins every route at 10/10 for the
+        // full 3-day window, since nothing before this capped the boost
+        // itself — only the final 0..1 result was clamped. 0.7 still lets
+        // 2-3 genuinely severe simultaneous events push risk well above a
+        // single event, without one route's history saturating forever.
+        activeSeverityBoost = Math.min(activeSeverityBoost, 0.7);
 
         double effectiveRisk = Math.min(1.0, baseline + activeSeverityBoost);
         double effectiveCost = baseCost * (1 + effectiveRisk * 0.5); // risk surcharge on shipping

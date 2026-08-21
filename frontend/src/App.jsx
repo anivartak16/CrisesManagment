@@ -4,12 +4,14 @@ import Dashboard from "./pages/Dashboard.jsx";
 import Suppliers from "./pages/Suppliers.jsx";
 import RoutesPage from "./pages/Routes.jsx";
 import ScenarioConsole from "./pages/ScenarioConsole.jsx";
+import WeatherImpact from "./pages/WeatherImpact.jsx";
 
 const NAV = [
   { to: "/", label: "Overview", glyph: "01", end: true },
   { to: "/suppliers", label: "Suppliers", glyph: "02" },
   { to: "/routes", label: "Shipping Routes", glyph: "03" },
-  { to: "/console", label: "Scenario Console", glyph: "04" },
+  { to: "/weather", label: "Weather Impact", glyph: "04" },
+  { to: "/console", label: "Scenario Console", glyph: "05" },
 ];
 
 export default function App() {
@@ -59,6 +61,7 @@ export default function App() {
             <Route path="/" element={<Dashboard />} />
             <Route path="/suppliers" element={<Suppliers />} />
             <Route path="/routes" element={<RoutesPage />} />
+            <Route path="/weather" element={<WeatherImpact />} />
             <Route path="/console" element={<ScenarioConsole />} />
           </RouterRoutes>
         </div>

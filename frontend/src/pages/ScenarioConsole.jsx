@@ -120,9 +120,9 @@ export default function ScenarioConsole() {
           <div className="pipe-body">
             <div className="pipe-label">Log the disruption</div>
             <p className="pipe-desc">
-              Paste raw text — a news report, cable, or field note — and tag which route it hits
-              and how severe it is. (Manual tagging for now: Gemini extraction stores the raw
-              response but doesn't parse severity/route yet, so the optimizer reads these fields.)
+              Paste raw text — a news report, cable, or field note. Gemini extracts severity,
+              event type, and the affected route automatically — leave "Affected route" on
+              auto-detect, or pick one yourself to override it.
             </p>
 
             <div className="panel panel-pad">
@@ -142,7 +142,7 @@ export default function ScenarioConsole() {
                   <div className="field" style={{ minWidth: 200 }}>
                     <label htmlFor="routeId">Affected route</label>
                     <select id="routeId" value={routeId} onChange={(e) => setRouteId(e.target.value)}>
-                      <option value="">— none —</option>
+                      <option value="">— auto-detect (Gemini) —</option>
                       {routes?.map((r) => (
                         <option key={r.id} value={r.id}>{r.name}</option>
                       ))}
@@ -198,7 +198,16 @@ export default function ScenarioConsole() {
                     <span className="mono" style={{ fontSize: 12, color: "var(--muted)" }}>
                       event #{event.id}
                     </span>
-                    <RiskGauge value={Number(severity)} max={10} size={44} />
+                    <RiskGauge value={Number(event.severity ?? severity)} max={10} size={44} />
+                  </div>
+                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 10, fontSize: 13 }}>
+                    <span className="mono">type: {event.eventType || "—"}</span>
+                    <span className="mono">
+                      route: {event.routeName || "unmatched"}
+                      {event.autoDetectedRoute && (
+                        <span style={{ color: "var(--sea, #2dd4bf)", marginLeft: 6 }}>(auto-detected by Gemini)</span>
+                      )}
+                    </span>
                   </div>
                   <pre className="json-block">{prettyJson(event.extractedJson)}</pre>
                 </div>
