@@ -33,4 +33,10 @@ public class Route {
 
     @Column(name = "base_risk_score", nullable = false)
     private Double baseRiskScore;
+
+    @Column(name = "origin_lat")
+    private Double originLat;
+
+    @Column(name = "origin_lng")
+    private Double originLng;
 }

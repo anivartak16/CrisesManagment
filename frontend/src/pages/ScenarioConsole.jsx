@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { api } from "../api.js";
 import ErrorBanner from "../components/ErrorBanner.jsx";
 import RiskGauge from "../components/RiskGauge.jsx";
+import AllocationChart from "../components/AllocationChart.jsx";
 
 function prettyJson(raw) {
   try {
@@ -275,48 +276,53 @@ export default function ScenarioConsole() {
               ) : loadingRecs ? (
                 <div className="empty-state">Running optimizer…</div>
               ) : recommendations?.length ? (
-                recommendations.map((rec) => (
-                  <div className="recommendation-card" key={rec.id}>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-                      <p className="recommendation-action">
-                        {rec.planName}
-                        {rec.isOptimal && <span className="badge-optimal">recommended</span>}
-                      </p>
-                      <span className="mono" style={{ fontSize: 12, color: "var(--muted)" }}>
-                        #{rec.id}
-                      </span>
-                    </div>
-                    <p className="recommendation-reason">
-                      Total cost ${rec.totalCost?.toLocaleString()} · avg risk {(rec.totalRisk * 100).toFixed(1)}%
-                      {rec.supplyGap > 0 && ` · ${rec.supplyGap.toLocaleString()} bbl/day unmet`}
-                    </p>
-
-                    {rec.allocations?.length > 0 && (
-                      <table className="allocation-table">
-                        <thead>
-                          <tr>
-                            <th>Supplier</th>
-                            <th>Route</th>
-                            <th>Barrels/day</th>
-                            <th>Share</th>
-                            <th>Cost</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {rec.allocations.map((a, idx) => (
-                            <tr key={idx}>
-                              <td>{a.supplierName}</td>
-                              <td>{a.routeName}</td>
-                              <td className="num">{a.allocatedBarrels?.toLocaleString()}</td>
-                              <td className="num">{a.allocatedPct?.toFixed(1)}%</td>
-                              <td className="num">${a.cost?.toLocaleString()}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    )}
+                <>
+                  <div className="recommendation-card" style={{ marginBottom: 14 }}>
+                    <AllocationChart plans={recommendations} />
                   </div>
-                ))
+                  {recommendations.map((rec) => (
+                    <div className="recommendation-card" key={rec.id}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+                        <p className="recommendation-action">
+                          {rec.planName}
+                          {rec.isOptimal && <span className="badge-optimal">recommended</span>}
+                        </p>
+                        <span className="mono" style={{ fontSize: 12, color: "var(--muted)" }}>
+                          #{rec.id}
+                        </span>
+                      </div>
+                      <p className="recommendation-reason">
+                        Total cost ${rec.totalCost?.toLocaleString()} · avg risk {(rec.totalRisk * 100).toFixed(1)}%
+                        {rec.supplyGap > 0 && ` · ${rec.supplyGap.toLocaleString()} bbl/day unmet`}
+                      </p>
+
+                      {rec.allocations?.length > 0 && (
+                        <table className="allocation-table">
+                          <thead>
+                            <tr>
+                              <th>Supplier</th>
+                              <th>Route</th>
+                              <th>Barrels/day</th>
+                              <th>Share</th>
+                              <th>Cost</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {rec.allocations.map((a, idx) => (
+                              <tr key={idx}>
+                                <td>{a.supplierName}</td>
+                                <td>{a.routeName}</td>
+                                <td className="num">{a.allocatedBarrels?.toLocaleString()}</td>
+                                <td className="num">{a.allocatedPct?.toFixed(1)}%</td>
+                                <td className="num">${a.cost?.toLocaleString()}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      )}
+                    </div>
+                  ))}
+                </>
               ) : (
                 <div className="empty-state">
                   <div className="empty-state-glyph">···</div>

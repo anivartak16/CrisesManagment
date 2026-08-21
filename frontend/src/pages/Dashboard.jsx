@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { api } from "../api.js";
 import ErrorBanner from "../components/ErrorBanner.jsx";
 import RiskGauge from "../components/RiskGauge.jsx";
+import RouteMap from "../components/RouteMap.jsx";
 
 export default function Dashboard() {
   const [suppliers, setSuppliers] = useState(null);
@@ -65,6 +66,11 @@ export default function Dashboard() {
 
       {!loading && !error && (
         <>
+          <p className="section-title">Route map</p>
+          <div className="panel panel-pad" style={{ marginBottom: 24 }}>
+            <RouteMap routes={routes} />
+          </div>
+
           <p className="section-title">Highest-risk corridor</p>
           <div className="panel panel-pad" style={{ marginBottom: 32, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 20, flexWrap: "wrap" }}>
             {riskiest ? (
