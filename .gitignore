@@ -68,3 +68,6 @@ build/
 .vscode/
 
 .env
+# Local Spring override (not committed)
+/src/main/resources/application-local.properties
+

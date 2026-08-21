@@ -1,0 +1,14 @@
+# Local override for development — do NOT commit this file with real secrets.
+# Copy to application-local.properties and fill values.
+
+# Database
+spring.datasource.url=${DB_URL:jdbc:postgresql://localhost:5432/CrisesManagment}
+spring.datasource.username=${DB_USER:postgres}
+spring.datasource.password=${DB_PASSWORD:root}
+
+# Gemini
+gemini.api.key=YOUR_GEMINI_API_KEY_HERE
+gemini.api.url=https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent
+
+# Server port (optional)
+server.port=8080
