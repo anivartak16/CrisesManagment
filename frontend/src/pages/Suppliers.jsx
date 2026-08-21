@@ -5,10 +5,12 @@ import RiskGauge from "../components/RiskGauge.jsx";
 
 export default function Suppliers() {
   const [suppliers, setSuppliers] = useState(null);
+  const [marketStatus, setMarketStatus] = useState(null);
   const [error, setError] = useState("");
 
   useEffect(() => {
     api.getSuppliers().then(setSuppliers).catch((e) => setError(e.message));
+    api.getMarketStatus().then(setMarketStatus).catch(() => {});
   }, []);
 
   return (
@@ -16,9 +18,27 @@ export default function Suppliers() {
       <p className="page-eyebrow">Reference data</p>
       <h1 className="page-title">Suppliers</h1>
       <p className="page-lede">
-        Crude producers currently under contract or evaluation, with baseline cost, capacity, and
-        risk exposure.
+        Crude producers currently under contract or evaluation. Company, country, capacity, and
+        risk classification are reference data; cost/bbl is recomputed live from the EIA Brent
+        spot price on every refresh.
       </p>
+
+      {marketStatus && (
+        <div className={`evidence-banner ${marketStatus.live ? "live" : "fallback"}`}>
+          <strong>{marketStatus.live ? "● Live" : "○ Fallback"}</strong>
+          {" — "}
+          {marketStatus.source}
+          {marketStatus.live && (
+            <>
+              {": $"}
+              {Number(marketStatus.brentSpotUsdPerBarrel).toFixed(2)}/bbl
+              {marketStatus.lastFetchedAt && (
+                <> · fetched {new Date(marketStatus.lastFetchedAt).toLocaleString()}</>
+              )}
+            </>
+          )}
+        </div>
+      )}
 
       <ErrorBanner message={error} />
 

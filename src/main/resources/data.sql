@@ -1,4 +1,11 @@
--- Seed suppliers (realistic major crude suppliers to India)
+-- Seed suppliers (real companies = reference/master data: name, country,
+-- capacity, risk classification). base_cost_per_barrel below is ONLY a
+-- fallback used if EIA_API_KEY is missing/unreachable — on every normal
+-- startup, MarketDataService.refreshOnStartup() immediately overwrites
+-- these with a value computed live from the EIA Brent spot price, and
+-- sets price_source='EIA_LIVE_BRENT' + last_price_update. Rows are left at
+-- price_source=NULL here; MarketDataService fills in the correct label
+-- (live or fallback) as soon as the app boots.
 INSERT INTO suppliers (id, name, country, base_cost_per_barrel, capacity, risk_baseline) VALUES
                                                                                              (1, 'Saudi Aramco', 'Saudi Arabia', 75.0, 200000.0, 0.10),
                                                                                              (2, 'Abu Dhabi National Oil Company', 'UAE', 77.0, 100000.0, 0.12),

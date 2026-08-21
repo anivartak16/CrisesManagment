@@ -259,6 +259,27 @@ select {
   margin: 0 0 32px;
 }
 
+.evidence-banner {
+  display: inline-block;
+  font-size: 13px;
+  padding: 8px 14px;
+  border-radius: 8px;
+  margin: 0 0 24px;
+  border: 1px solid transparent;
+}
+
+.evidence-banner.live {
+  color: #0a7a3e;
+  background: rgba(16, 185, 129, 0.1);
+  border-color: rgba(16, 185, 129, 0.3);
+}
+
+.evidence-banner.fallback {
+  color: #b45309;
+  background: rgba(245, 158, 11, 0.1);
+  border-color: rgba(245, 158, 11, 0.3);
+}
+
 .section-title {
   font-family: var(--font-display);
   font-size: 13px;

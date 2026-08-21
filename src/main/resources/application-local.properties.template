@@ -7,7 +7,7 @@ spring.datasource.username=${DB_USER:postgres}
 spring.datasource.password=${DB_PASSWORD:root}
 
 # Gemini
-gemini.api.key=YOUR_GEMINI_API_KEY_HERE
+gemini.api.key=YOUR_GEMINI_API_KEY
 gemini.api.url=https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent
 gemini.api.model=gemini-3.6-flash
 

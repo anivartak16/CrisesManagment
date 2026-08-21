@@ -25,6 +25,7 @@ export const api = {
   // Reference data
   getSuppliers: () => request("/api/suppliers"),
   getSupplier: (id) => request(`/api/suppliers/${id}`),
+  getMarketStatus: () => request("/api/suppliers/market-status"),
   getRoutes: () => request("/api/routes"),
   getRoute: (id) => request(`/api/routes/${id}`),
 
