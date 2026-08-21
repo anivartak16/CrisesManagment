@@ -12,8 +12,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.List;
 
 @Slf4j
@@ -23,17 +22,27 @@ public class NewsMonitorService {
 
     @Qualifier("gdeltWebClient")
     private final WebClient gdeltWebClient;
+
     private final GeminiExtractionService geminiExtractionService;
     private final RouteRepository routeRepository;
+
     private final ObjectMapper objectMapper = new ObjectMapper();
+
 
     @Scheduled(fixedRate = 900000) // every 15 min
     public void pollShippingNews() {
+
         List<Route> routes = routeRepository.findAll();
+
         for (Route route : routes) {
+
             try {
-                String query = URLEncoder.encode(
-                        route.getName() + " oil shipping disruption", StandardCharsets.UTF_8);
+
+                // No need to manually encode.
+                // WebClient handles query parameter encoding.
+                String query =
+                        route.getName() + " oil shipping disruption";
+
 
                 String response = gdeltWebClient.get()
                         .uri(uriBuilder -> uriBuilder
@@ -46,26 +55,77 @@ public class NewsMonitorService {
                                 .build())
                         .retrieve()
                         .bodyToMono(String.class)
+                        .timeout(Duration.ofSeconds(60))
                         .block();
 
-                JsonNode articles = objectMapper.readTree(response).path("articles");
-                if (!articles.isArray()) continue;
+
+                // Handle empty response
+                if (response == null || response.isBlank()) {
+
+                    log.warn(
+                            "Empty response received from GDELT for route {}",
+                            route.getName()
+                    );
+
+                    continue;
+                }
+
+
+                JsonNode articles =
+                        objectMapper
+                                .readTree(response)
+                                .path("articles");
+
+
+                if (!articles.isArray()) {
+
+                    log.warn(
+                            "No articles found for route {}",
+                            route.getName()
+                    );
+
+                    continue;
+                }
+
 
                 for (JsonNode article : articles) {
-                    String headline = article.path("title").asText();
-                    if (headline.isBlank()) continue;
 
-                    RiskEventRequestDto dto = new RiskEventRequestDto();
+                    String headline =
+                            article.path("title").asText();
+
+
+                    if (headline.isBlank()) {
+                        continue;
+                    }
+
+
+                    RiskEventRequestDto dto =
+                            new RiskEventRequestDto();
+
                     dto.setRawText(headline);
                     dto.setRouteId(route.getId());
-                    // severity/eventType left null — GeminiExtractionService's manual-override
-                    // fields stay unset so this clearly reads as an auto-detected event
+
+
+                    // Gemini will automatically determine
+                    // severity and event type
                     geminiExtractionService.extractAndSave(dto);
-                    log.info("Auto-created risk event for route {} from headline: {}",
-                            route.getName(), headline);
+
+
+                    log.info(
+                            "Auto-created risk event for route {} from headline: {}",
+                            route.getName(),
+                            headline
+                    );
                 }
+
+
             } catch (Exception e) {
-                log.error("News poll failed for route {}", route.getName(), e);
+
+                log.error(
+                        "News poll failed for route {}",
+                        route.getName(),
+                        e
+                );
             }
         }
     }
