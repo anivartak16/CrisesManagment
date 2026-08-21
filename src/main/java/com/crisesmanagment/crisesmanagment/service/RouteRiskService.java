@@ -1,0 +1,78 @@
+package com.crisesmanagment.crisesmanagment.service;
+
+import com.crisesmanagment.crisesmanagment.model.Route;
+import com.crisesmanagment.crisesmanagment.model.RiskEvent;
+import com.crisesmanagment.crisesmanagment.repo.RiskEventRepository;
+import com.crisesmanagment.crisesmanagment.repo.RouteRepository;
+import jakarta.annotation.PostConstruct;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Service;
+
+import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+@Slf4j
+@Service
+@RequiredArgsConstructor
+public class RouteRiskService {
+
+    private final RouteRepository routeRepository;
+    private final RiskEventRepository riskEventRepository;
+
+    // Preserve each route's original seeded risk/cost so live numbers are
+    // always computed from a stable baseline, not from an already-mutated
+    // value (same pattern as MarketDataService's lastKnownBaseline).
+    private final Map<Long, Double> originalRiskBaseline = new HashMap<>();
+    private final Map<Long, Double> originalShippingCost = new HashMap<>();
+
+    @PostConstruct
+    public void captureBaselines() {
+        for (Route r : routeRepository.findAll()) {
+            originalRiskBaseline.put(r.getId(), r.getBaseRiskScore());
+            originalShippingCost.put(r.getId(), r.getBaseShippingCost());
+        }
+    }
+
+    // Safety-net sweep every 5 min — decays/clears effects of expired events
+    // even if no new event triggers a recompute in that window.
+    @Scheduled(fixedRate = 300000)
+    public void recomputeAllRoutes() {
+        for (Route r : routeRepository.findAll()) {
+            recomputeRouteRisk(r.getId());
+        }
+    }
+
+    public void recomputeRouteRisk(Long routeId) {
+        Route route = routeRepository.findById(routeId).orElse(null);
+        if (route == null) return;
+
+        double baseline = originalRiskBaseline.getOrDefault(routeId, route.getBaseRiskScore());
+        double baseCost = originalShippingCost.getOrDefault(routeId, route.getBaseShippingCost());
+
+        List<RiskEvent> events = riskEventRepository.findByRouteId(routeId);
+        LocalDateTime now = LocalDateTime.now();
+
+        double activeSeverityBoost = 0.0;
+        for (RiskEvent e : events) {
+            int durationDays = e.getDurationDays() != null ? e.getDurationDays() : 3; // default window
+            LocalDateTime expiresAt = e.getCreatedAt().plusDays(durationDays);
+            if (now.isBefore(expiresAt)) {
+                // severity is 0-10 in RiskEvent, baseline is 0-1 scale — normalize
+                activeSeverityBoost += (e.getSeverity() / 10.0) * 0.3;
+            }
+        }
+
+        double effectiveRisk = Math.min(1.0, baseline + activeSeverityBoost);
+        double effectiveCost = baseCost * (1 + effectiveRisk * 0.5); // risk surcharge on shipping
+
+        route.setBaseRiskScore(effectiveRisk);
+        route.setBaseShippingCost(effectiveCost);
+        routeRepository.save(route);
+
+        log.info("Route '{}' risk updated: {} (active events: {})", route.getName(), effectiveRisk, events.size());
+    }
+}
