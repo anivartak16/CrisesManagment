@@ -12,6 +12,86 @@ function prettyJson(raw) {
   }
 }
 
+function parseExtractedJson(raw) {
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
+}
+
+const FIELD_ROWS = [
+  { key: "severity", label: "Severity" },
+  { key: "eventType", label: "Event type" },
+  { key: "durationDays", label: "Duration (days)" },
+  { key: "routeName", label: "Route" },
+];
+
+function ComparisonTable({ parsed }) {
+  const { primary, secondary, reconciled, agreement } = parsed;
+  return (
+    <table className="allocation-table" style={{ marginTop: 4 }}>
+      <thead>
+        <tr>
+          <th>Field</th>
+          <th>Primary key</th>
+          <th>Secondary key</th>
+          <th>Final (used)</th>
+        </tr>
+      </thead>
+      <tbody>
+        {FIELD_ROWS.map(({ key, label }) => {
+          const agree = agreement?.[key];
+          return (
+            <tr key={key}>
+              <td>{label}</td>
+              <td className={agree ? "" : "mono"} style={!agree ? { color: "var(--amber)" } : undefined}>
+                {String(primary?.[key] ?? "—")}
+              </td>
+              <td className={agree ? "" : "mono"} style={!agree ? { color: "var(--amber)" } : undefined}>
+                {String(secondary?.[key] ?? "—")}
+              </td>
+              <td>
+                <strong>{String(reconciled?.[key] ?? "—")}</strong>
+              </td>
+            </tr>
+          );
+        })}
+      </tbody>
+    </table>
+  );
+}
+
+function ExtractionDetail({ extractedJson }) {
+  const [showRaw, setShowRaw] = useState(false);
+  const parsed = parseExtractedJson(extractedJson);
+  const isDualKey = parsed?.dualKeyComparison === true;
+
+  return (
+    <div>
+      {isDualKey && (
+        <div style={{ marginBottom: 10 }}>
+          <p className="mono" style={{ fontSize: 12, color: "var(--muted)", marginBottom: 6 }}>
+            compared across both Gemini keys — mismatched values in amber
+          </p>
+          <ComparisonTable parsed={parsed} />
+        </div>
+      )}
+
+      <button
+        type="button"
+        className="btn"
+        onClick={() => setShowRaw((v) => !v)}
+        style={{ fontSize: 12, padding: "6px 10px" }}
+      >
+        {showRaw ? "▲ Hide raw response JSON" : "▼ Show raw response JSON"}
+      </button>
+
+      {showRaw && <pre className="json-block" style={{ marginTop: 8 }}>{prettyJson(extractedJson)}</pre>}
+    </div>
+  );
+}
+
 const SAMPLE_TEXT =
   "Houthi forces launched a missile strike near a tanker transiting the Bab-el-Mandeb strait " +
   "on Tuesday, prompting several shipping lines to reroute crude cargoes via the Cape of Good " +
@@ -235,7 +315,7 @@ export default function ScenarioConsole() {
                       )}
                     </span>
                   </div>
-                  <pre className="json-block">{prettyJson(event.extractedJson)}</pre>
+                  <ExtractionDetail extractedJson={event.extractedJson} />
                 </div>
               )}
             </div>

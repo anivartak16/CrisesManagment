@@ -41,7 +41,7 @@ public class NewsMonitorService {
     // free doc/doc endpoint has no published quota, but empirically starts
     // returning 429s / dropping connections once you're a few requests deep
     // in quick succession — 8s keeps a 6-route sweep well under that.
-    private static final Duration GDELT_REQUEST_SPACING = Duration.ofSeconds(8);
+    private static final Duration GDELT_REQUEST_SPACING = Duration.ofSeconds(12);
 
 
     @Scheduled(fixedRate = 900000)
@@ -150,6 +150,22 @@ public class NewsMonitorService {
 
             log.warn(
                     "No response from GDELT for route {}",
+                    route.getName()
+            );
+
+            return;
+        }
+
+        // GDELT sometimes responds 200 OK with a plain-text rate-limit notice
+        // instead of JSON once this IP has sent requests too close together
+        // (their stated limit is one request per 5s). This isn't a parse
+        // failure — treat it as a distinct, expected condition and just skip
+        // this route until the next scheduled poll instead of logging it as
+        // a broken/unexpected response.
+        if (response.contains("Please limit requests")) {
+
+            log.warn(
+                    "GDELT rate-limited this IP while polling route {} — skipping this cycle, will retry next poll.",
                     route.getName()
             );
 

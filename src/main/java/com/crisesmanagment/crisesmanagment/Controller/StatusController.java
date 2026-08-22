@@ -28,6 +28,9 @@ public class StatusController {
     @Value("${gemini.api.key:}")
     private String geminiApiKey;
 
+    @Value("${groq.api.key:}")
+    private String groqApiKey;
+
     @GetMapping
     public Map<String, Object> getStatus() {
         List<Map<String, Object>> integrations = new ArrayList<>();
@@ -42,10 +45,15 @@ public class StatusController {
         ));
 
         boolean geminiConfigured = geminiApiKey != null && !geminiApiKey.isBlank();
+        boolean groqConfigured = groqApiKey != null && !groqApiKey.isBlank();
         integrations.add(integration(
                 "Gemini (headline extraction)",
                 geminiConfigured,
-                geminiConfigured ? "Configured — auto-classifying news headlines" : "Set GEMINI_API_KEY — automatic risk-event extraction disabled",
+                geminiConfigured
+                        ? (groqConfigured
+                                ? "Configured — cross-checking every headline against Groq"
+                                : "Configured — auto-classifying news headlines")
+                        : "Set GEMINI_API_KEY — automatic risk-event extraction disabled",
                 null
         ));
 

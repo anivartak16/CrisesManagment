@@ -10,5 +10,17 @@ spring.datasource.password=${DB_PASSWORD:root}
 gemini.api.key=YOUR_GEMINI_API_KEY
 gemini.api.model=gemini-3.6-flash
 
+# Groq (for dual cross-check comparison) — leave blank to skip it.
+groq.api.key=YOUR_GROQ_API_KEY
+groq.api.model=openai/gpt-oss-120b
+
 # Server port (optional)
 server.port=8080
+
+# Disable DevTools auto-restart-on-save. With it on, every code save spawns a
+# fresh app instance, and the GDELT news poller's @Scheduled job fires again
+# immediately on each restart — several restarts close together can burst
+# GDELT with requests from the same IP faster than their 1-per-5s limit, even
+# though the in-app spacing between routes is fine. Turn this back on if you
+# want hot-reload and don't mind occasional GDELT rate-limit warnings.
+spring.devtools.restart.enabled=false

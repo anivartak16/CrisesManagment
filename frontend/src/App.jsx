@@ -5,8 +5,6 @@ import Suppliers from "./pages/Suppliers.jsx";
 import RoutesPage from "./pages/Routes.jsx";
 import ScenarioConsole from "./pages/ScenarioConsole.jsx";
 import WeatherImpact from "./pages/WeatherImpact.jsx";
-import History from "./pages/History.jsx";
-import ActivityLog from "./pages/ActivityLog.jsx";
 
 const NAV = [
   { to: "/", label: "Overview", glyph: "01", end: true },
@@ -14,8 +12,6 @@ const NAV = [
   { to: "/routes", label: "Shipping Routes", glyph: "03" },
   { to: "/weather", label: "Weather Impact", glyph: "04" },
   { to: "/console", label: "Scenario Console", glyph: "05" },
-  { to: "/history", label: "Scenario History", glyph: "06" },
-  { to: "/activity", label: "Activity Log", glyph: "07" },
 ];
 
 export default function App() {
@@ -67,8 +63,6 @@ export default function App() {
             <Route path="/routes" element={<RoutesPage />} />
             <Route path="/weather" element={<WeatherImpact />} />
             <Route path="/console" element={<ScenarioConsole />} />
-            <Route path="/history" element={<History />} />
-            <Route path="/activity" element={<ActivityLog />} />
           </RouterRoutes>
         </div>
       </div>
