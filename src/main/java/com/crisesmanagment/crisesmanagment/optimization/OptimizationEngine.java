@@ -65,7 +65,21 @@ public class OptimizationEngine {
 
             double pct = demandBarrels > 0d ? (allocated / demandBarrels) * 100d : 0d;
             double cost = allocated * (option.getUnitCost() != null ? option.getUnitCost() : 0d);
-            double risk = allocated * (option.getRiskScore() != null ? option.getRiskScore() : 0d) / 100d;
+
+            // FIX: was `allocated * riskScore / 100` — mixed raw barrels (e.g. 3,974)
+            // with a 0-1 riskScore, producing an unbounded number instead of a
+            // weighted-average risk. That's what caused "avg risk 516.7%" on the
+            // frontend, which assumes totalRisk is already a 0-1 fraction and just
+            // multiplies by 100 to display it.
+            //
+            // `pct` above is already this line's *fraction of total demand*
+            // (0-100 scale). Using (pct / 100) as the weight instead of raw
+            // `allocated` barrels keeps totalRisk correctly bounded: summed
+            // across all lines in a plan, the weights add up to at most 1
+            // (100% of demand covered), so totalRisk can never exceed the
+            // highest individual supplier risk score used in the plan.
+            double riskScore = option.getRiskScore() != null ? option.getRiskScore() : 0d;
+            double risk = (pct / 100d) * riskScore;
 
             lines.add(new AllocationLine(
                     option.getSupplierId(),
