@@ -12,6 +12,9 @@ import com.crisesmanagment.crisesmanagment.repo.ScenarioRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 @Service
 @RequiredArgsConstructor
 public class ScenarioSimulationService {
@@ -55,6 +58,15 @@ public class ScenarioSimulationService {
         Scenario scenario = scenarioRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Scenario not found with id: " + id));
         return toDto(scenario);
+    }
+
+    /**
+     * All scenarios ever simulated, most recent first — backs the History page.
+     */
+    public List<ScenarioResponseDto> getAllScenarios() {
+        return scenarioRepository.findAllByOrderByIdDesc().stream()
+                .map(this::toDto)
+                .collect(Collectors.toList());
     }
 
     private ScenarioResponseDto toDto(Scenario scenario) {

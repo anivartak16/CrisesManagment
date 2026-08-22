@@ -2,6 +2,7 @@ package com.crisesmanagment.crisesmanagment.service;
 
 import com.crisesmanagment.crisesmanagment.dto.RiskEventRequestDto;
 import com.crisesmanagment.crisesmanagment.model.Route;
+import com.crisesmanagment.crisesmanagment.model.RiskEvent;
 import com.crisesmanagment.crisesmanagment.repo.RiskEventRepository;
 import com.crisesmanagment.crisesmanagment.repo.RouteRepository;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -17,7 +18,9 @@ import reactor.util.retry.Retry;
 
 import java.net.ConnectException;
 import java.time.Duration;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.TimeoutException;
 
 @Slf4j
@@ -34,6 +37,12 @@ public class NewsMonitorService {
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
+    // Gap between per-route GDELT requests within one polling pass. GDELT's
+    // free doc/doc endpoint has no published quota, but empirically starts
+    // returning 429s / dropping connections once you're a few requests deep
+    // in quick succession — 8s keeps a 6-route sweep well under that.
+    private static final Duration GDELT_REQUEST_SPACING = Duration.ofSeconds(8);
+
 
     @Scheduled(fixedRate = 900000)
     public void pollShippingNews() {
@@ -42,7 +51,9 @@ public class NewsMonitorService {
 
         List<Route> routes = routeRepository.findAll();
 
-        for (Route route : routes) {
+        for (int i = 0; i < routes.size(); i++) {
+
+            Route route = routes.get(i);
 
             try {
 
@@ -55,6 +66,23 @@ public class NewsMonitorService {
                         route.getName(),
                         e
                 );
+            }
+
+            // GDELT's public doc/doc endpoint rate-limits aggressively per
+            // client. Firing one request per route back-to-back (6 routes =
+            // 6 requests in a couple of seconds) reliably triggers 429s and
+            // dropped connections for everything after the first call. A
+            // short pause between routes keeps us under that limit. Skipped
+            // after the last route so we don't delay the "finished" log for
+            // no reason.
+            if (i < routes.size() - 1) {
+                try {
+                    Thread.sleep(GDELT_REQUEST_SPACING.toMillis());
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                    log.warn("GDELT polling loop interrupted while spacing out requests; stopping this run.");
+                    break;
+                }
             }
         }
 
@@ -149,8 +177,19 @@ public class NewsMonitorService {
 
             // Load existing events ONCE instead of querying
             // the database for every article.
-            List<?> existingEvents =
+            List<RiskEvent> existingEvents =
                     riskEventRepository.findByRouteId(route.getId());
+
+            // Track headlines already seen for this route (from the DB,
+            // plus any processed earlier in this same batch) so that two
+            // near-identical articles in one GDELT response don't both
+            // get turned into separate risk events.
+            Set<String> seenHeadlines = new HashSet<>();
+            for (RiskEvent existing : existingEvents) {
+                if (existing.getRawText() != null) {
+                    seenHeadlines.add(existing.getRawText().toLowerCase());
+                }
+            }
 
 
             for (JsonNode article : articles) {
@@ -165,14 +204,7 @@ public class NewsMonitorService {
 
 
                 boolean alreadyExists =
-                        riskEventRepository
-                                .findByRouteId(route.getId())
-                                .stream()
-                                .anyMatch(event ->
-                                        headline.equalsIgnoreCase(
-                                                event.getRawText()
-                                        )
-                                );
+                        seenHeadlines.contains(headline.toLowerCase());
 
 
                 if (alreadyExists) {
@@ -204,6 +236,7 @@ public class NewsMonitorService {
                 try {
 
                     geminiExtractionService.extractAndSave(dto);
+                    seenHeadlines.add(headline.toLowerCase());
 
                     log.info(
                             "Auto-created risk event for route {} from headline: {}",

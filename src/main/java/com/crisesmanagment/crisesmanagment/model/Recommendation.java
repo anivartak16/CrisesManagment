@@ -39,4 +39,15 @@ public class Recommendation {
 
     @Column(name = "allocation_json", columnDefinition = "TEXT")
     private String allocationJson;
+
+    /**
+     * Lifecycle status for this plan: PROPOSED (default, freshly generated),
+     * ACCEPTED (user committed to this plan), or REJECTED (a sibling plan for
+     * the same scenario was accepted instead). Nullable-safe default via
+     * @Builder.Default so existing rows created before this column existed
+     * just read back as null until touched, and new rows always get a value.
+     */
+    @Builder.Default
+    @Column(name = "status")
+    private String status = "PROPOSED";
 }

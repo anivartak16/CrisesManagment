@@ -31,6 +31,7 @@ export default function ScenarioConsole() {
   const [loadingEvent, setLoadingEvent] = useState(false);
   const [loadingScenario, setLoadingScenario] = useState(false);
   const [loadingRecs, setLoadingRecs] = useState(false);
+  const [acceptingId, setAcceptingId] = useState(null);
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -95,6 +96,30 @@ export default function ScenarioConsole() {
     setScenario(null);
     setRecommendations(null);
     setError("");
+  }
+
+  async function handleAccept(recommendationId) {
+    setError("");
+    setAcceptingId(recommendationId);
+    try {
+      await api.acceptRecommendation(recommendationId);
+      // Reflect the accept/auto-reject the backend just applied without a
+      // full refetch: the chosen plan becomes ACCEPTED, any other plan that
+      // was still PROPOSED for this scenario becomes REJECTED.
+      setRecommendations((prev) =>
+        prev.map((r) =>
+          r.id === recommendationId
+            ? { ...r, status: "ACCEPTED" }
+            : r.status === "PROPOSED"
+            ? { ...r, status: "REJECTED" }
+            : r
+        )
+      );
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setAcceptingId(null);
+    }
   }
 
   return (
@@ -168,6 +193,7 @@ export default function ScenarioConsole() {
                       <option value="ATTACK">Attack</option>
                       <option value="SANCTIONS">Sanctions</option>
                       <option value="CONGESTION">Congestion</option>
+                      <option value="WEATHER">Weather</option>
                     </select>
                   </div>
                 </div>
@@ -304,6 +330,21 @@ export default function ScenarioConsole() {
                         Total cost ${rec.totalCost?.toLocaleString()} · avg risk {(rec.totalRisk * 100).toFixed(1)}%
                         {rec.supplyGap > 0 && ` · ${rec.supplyGap.toLocaleString()} bbl/day unmet`}
                       </p>
+
+                      <div style={{ display: "flex", alignItems: "center", gap: 10, margin: "8px 0 4px" }}>
+                        {rec.status === "ACCEPTED" && <span className="badge badge-sea">accepted</span>}
+                        {rec.status === "REJECTED" && <span className="badge badge-neutral">not chosen</span>}
+                        {(!rec.status || rec.status === "PROPOSED") && (
+                          <button
+                            type="button"
+                            className="btn"
+                            onClick={() => handleAccept(rec.id)}
+                            disabled={acceptingId === rec.id}
+                          >
+                            {acceptingId === rec.id ? "Accepting…" : "Accept this plan"}
+                          </button>
+                        )}
+                      </div>
 
                       {rec.allocations?.length > 0 && (
                         <table className="allocation-table">

@@ -18,4 +18,9 @@ public class RecommendationController {
     public List<RecommendationDto> getRecommendations(@PathVariable Long scenarioId) {
         return recommendationService.getRecommendationsForScenario(scenarioId);
     }
+
+    @PatchMapping("/{recommendationId}/accept")
+    public RecommendationDto acceptRecommendation(@PathVariable Long recommendationId) {
+        return recommendationService.acceptRecommendation(recommendationId);
+    }
 }

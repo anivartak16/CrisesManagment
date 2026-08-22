@@ -7,4 +7,8 @@ import java.util.List;
 
 public interface RiskEventRepository extends JpaRepository<RiskEvent, Long> {
     List<RiskEvent> findByRouteId(Long routeId);
+
+    List<RiskEvent> findAllByOrderByCreatedAtDesc();
+
+    List<RiskEvent> findByRouteIdOrderByCreatedAtDesc(Long routeId);
 }

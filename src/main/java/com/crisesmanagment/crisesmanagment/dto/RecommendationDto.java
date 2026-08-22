@@ -16,6 +16,7 @@ public class RecommendationDto {
     private Double totalRisk;
     private Double supplyGap;
     private Boolean isOptimal;
+    private String status;
     private List<AllocationLineDto> allocations;
 
     @Data

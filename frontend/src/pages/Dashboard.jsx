@@ -8,6 +8,7 @@ import RouteMap from "../components/RouteMap.jsx";
 export default function Dashboard() {
   const [suppliers, setSuppliers] = useState(null);
   const [routes, setRoutes] = useState(null);
+  const [status, setStatus] = useState(null);
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -17,6 +18,9 @@ export default function Dashboard() {
         setRoutes(r);
       })
       .catch((e) => setError(e.message));
+
+    // Non-fatal: the health panel shouldn't block the rest of the dashboard.
+    api.getStatus().then(setStatus).catch(() => setStatus(null));
   }, []);
 
   const loading = suppliers === null || routes === null;
@@ -29,6 +33,12 @@ export default function Dashboard() {
     ? [...routes].sort((a, b) => b.baseRiskScore - a.baseRiskScore)[0]
     : null;
 
+  // A route counts as "currently disrupted" once its live risk score has
+  // been pushed above the seeded baseline by a recent event/weather update.
+  const disruptedRoutes = routes?.filter(
+    (r) => r.seedRiskScore != null && r.baseRiskScore > r.seedRiskScore
+  ) ?? [];
+
   return (
     <div>
       <p className="page-eyebrow">Network overview</p>
@@ -39,6 +49,33 @@ export default function Dashboard() {
       </p>
 
       <ErrorBanner message={error} />
+
+      {!loading && !error && disruptedRoutes.length > 0 && (
+        <div
+          className="panel panel-pad"
+          style={{
+            marginBottom: 20,
+            borderColor: "var(--rust, #b5432a)",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            gap: 16,
+            flexWrap: "wrap",
+          }}
+        >
+          <div>
+            <div style={{ fontFamily: "var(--font-display)", fontWeight: 600, fontSize: 15 }}>
+              {disruptedRoutes.length} route{disruptedRoutes.length > 1 ? "s" : ""} currently disrupted
+            </div>
+            <div style={{ color: "var(--muted)", fontSize: 13, marginTop: 4 }}>
+              {disruptedRoutes.map((r) => r.name).join(", ")}
+            </div>
+          </div>
+          <Link to="/activity" className="btn">
+            View activity log →
+          </Link>
+        </div>
+      )}
 
       {!error && (
         <div className="stat-grid">
@@ -102,6 +139,35 @@ export default function Dashboard() {
             <Link to="/console" className="btn btn-primary">
               Open Scenario Console →
             </Link>
+          </div>
+        </>
+      )}
+
+      {status?.integrations && (
+        <>
+          <p className="section-title" style={{ marginTop: 32 }}>Integration status</p>
+          <div className="panel panel-pad">
+            {status.integrations.map((i) => (
+              <div
+                key={i.name}
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  gap: 16,
+                  padding: "8px 0",
+                  borderBottom: "1px solid var(--border, #2a2a2a)",
+                }}
+              >
+                <div>
+                  <div style={{ fontWeight: 600, fontSize: 13 }}>{i.name}</div>
+                  <div style={{ color: "var(--muted)", fontSize: 12, marginTop: 2 }}>{i.detail}</div>
+                </div>
+                <span className={`badge ${i.live ? "badge-sea" : "badge-neutral"}`}>
+                  {i.live ? "LIVE" : "FALLBACK"}
+                </span>
+              </div>
+            ))}
           </div>
         </>
       )}

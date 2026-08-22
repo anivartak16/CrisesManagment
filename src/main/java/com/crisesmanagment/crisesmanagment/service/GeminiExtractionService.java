@@ -62,7 +62,7 @@ public class GeminiExtractionService {
         // field can be auto-detected instead of always requiring manual tagging.
         String prompt = "Analyze this crude oil supply-chain news headline and respond with ONLY "
                 + "raw JSON, no markdown, no explanation, in exactly this shape: "
-                + "{\"severity\": <integer 0-10>, \"eventType\": \"<CLOSURE|SANCTIONS|ATTACK|WEATHER|OTHER>\", "
+                + "{\"severity\": <integer 0-10>, \"eventType\": \"<CLOSURE|SANCTIONS|ATTACK|WEATHER|CONGESTION|OTHER>\", "
                 + "\"durationDays\": <integer>, \"routeName\": \"<one of: " + routeList + ", or null if none clearly match>\"}. "
                 + "Headline: \"" + rawText + "\"";
 
