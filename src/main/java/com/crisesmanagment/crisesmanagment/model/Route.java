@@ -39,4 +39,18 @@ public class Route {
 
     @Column(name = "origin_lng")
     private Double originLng;
+
+    // True, never-mutated reference values (set once from data.sql and reset
+    // there on every boot). base_risk_score / base_shipping_cost above are
+    // the LIVE numbers RouteRiskService overwrites as events fire — they are
+    // not safe to re-derive a "baseline" from after the app has been running
+    // for a while, because they already contain previous event boosts. These
+    // seed_* columns are what RouteRiskService.captureBaselines() reads from
+    // instead, so a restart can never "lock in" a previously-inflated risk
+    // score as the new starting point.
+    @Column(name = "seed_risk_score")
+    private Double seedRiskScore;
+
+    @Column(name = "seed_shipping_cost")
+    private Double seedShippingCost;
 }

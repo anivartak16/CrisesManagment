@@ -25,16 +25,35 @@ public class RouteRiskService {
 
     // Preserve each route's original seeded risk/cost so live numbers are
     // always computed from a stable baseline, not from an already-mutated
-    // value (same pattern as MarketDataService's lastKnownBaseline).
+    // value. Populated from Route.seedRiskScore / Route.seedShippingCost,
+    // which data.sql resets on every boot — NOT from Route.baseRiskScore /
+    // Route.baseShippingCost, which are the live columns this service
+    // itself overwrites (see captureBaselines() below for why that
+    // distinction matters).
     private final Map<Long, Double> originalRiskBaseline = new HashMap<>();
     private final Map<Long, Double> originalShippingCost = new HashMap<>();
 
     @PostConstruct
     public void captureBaselines() {
+        // IMPORTANT: baselines must come from seed_risk_score / seed_shipping_cost,
+        // never from base_risk_score / base_shipping_cost. The base_* columns are
+        // LIVE — recomputeRouteRisk() below overwrites them as events fire — so on
+        // app restart they may already hold a previously-boosted value. Capturing
+        // "baseline" from base_* would treat that boosted value as the new floor,
+        // ratcheting risk further up every restart until every route is pinned at
+        // max (this was the root cause of routes always showing 10/10). seed_* is
+        // reset to the true reference numbers on every boot by data.sql, so it's
+        // safe to always trust.
         for (Route r : routeRepository.findAll()) {
-            originalRiskBaseline.put(r.getId(), r.getBaseRiskScore());
-            originalShippingCost.put(r.getId(), r.getBaseShippingCost());
+            double seedRisk = r.getSeedRiskScore() != null ? r.getSeedRiskScore() : r.getBaseRiskScore();
+            double seedCost = r.getSeedShippingCost() != null ? r.getSeedShippingCost() : r.getBaseShippingCost();
+            originalRiskBaseline.put(r.getId(), seedRisk);
+            originalShippingCost.put(r.getId(), seedCost);
         }
+        // Heal immediately: recompute every route right away so a restart never
+        // leaves a stale/inflated live number sitting in base_risk_score for up
+        // to 5 minutes until the next scheduled sweep.
+        recomputeAllRoutes();
     }
 
     // Safety-net sweep every 5 min — decays/clears effects of expired events
