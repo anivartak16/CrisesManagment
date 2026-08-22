@@ -38,14 +38,9 @@ export const api = {
   simulateScenario: (eventId) =>
     request(`/api/scenarios/${eventId}/simulate`, { method: "POST" }),
   getScenario: (id) => request(`/api/scenarios/${id}`),
-  getScenarios: () => request("/api/scenarios"),
   getRecommendations: (scenarioId) => request(`/api/recommendations/${scenarioId}`),
   acceptRecommendation: (recommendationId) =>
     request(`/api/recommendations/${recommendationId}/accept`, { method: "PATCH" }),
-
-  // Activity feed: every risk event ever logged, or just one route's history
-  getEvents: () => request("/api/events"),
-  getEventsForRoute: (routeId) => request(`/api/events/route/${routeId}`),
 
   // Weather: which routes are currently affected by weather (wind/storms)
   getWeatherRisks: () => request("/api/weather/routes"),

@@ -71,8 +71,8 @@ export default function Dashboard() {
               {disruptedRoutes.map((r) => r.name).join(", ")}
             </div>
           </div>
-          <Link to="/activity" className="btn">
-            View activity log →
+          <Link to="/routes" className="btn">
+            View affected routes →
           </Link>
         </div>
       )}

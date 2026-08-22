@@ -426,60 +426,41 @@ tbody tr:hover {
 }
 
 /* ---------- badges ---------- */
-/* Solid-fill instrument-light badges: color IS the signal, the glyph is
-   a backup channel for anyone relying on shape/contrast over hue. */
 
 .badge {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 4px 10px 4px 8px;
+  gap: 5px;
+  padding: 3px 9px;
   border-radius: 999px;
   font-family: var(--font-mono);
   font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.03em;
   border: 1px solid transparent;
 }
 
-.badge-glyph {
-  font-size: 9px;
-  line-height: 1;
-  transform: translateY(-0.5px);
-}
-
 .badge-sea {
-  color: var(--ink);
-  background: var(--sea);
-  border-color: color-mix(in srgb, var(--sea) 60%, var(--ink) 40%);
+  color: var(--sea);
+  background: var(--sea-dim);
+  border-color: color-mix(in srgb, var(--sea) 35%, transparent);
 }
 
 .badge-amber {
-  color: var(--ink);
-  background: var(--amber);
-  border-color: color-mix(in srgb, var(--amber) 60%, var(--ink) 40%);
+  color: var(--amber);
+  background: var(--amber-dim);
+  border-color: color-mix(in srgb, var(--amber) 35%, transparent);
 }
 
 .badge-rust {
-  color: var(--paper);
-  background: var(--rust);
-  border-color: color-mix(in srgb, var(--rust) 50%, var(--paper) 15%);
-  animation: badge-pulse 2.2s ease-in-out infinite;
+  color: #f3aca2;
+  background: var(--rust-dim);
+  border-color: color-mix(in srgb, var(--rust) 40%, transparent);
 }
 
 .badge-neutral {
   color: var(--muted);
   background: var(--panel-raised);
   border-color: var(--line);
-}
-
-@keyframes badge-pulse {
-  0%, 100% {
-    box-shadow: 0 0 0 0 color-mix(in srgb, var(--rust) 55%, transparent);
-  }
-  50% {
-    box-shadow: 0 0 0 5px color-mix(in srgb, var(--rust) 0%, transparent);
-  }
 }
 
 /* ---------- buttons & forms ---------- */
