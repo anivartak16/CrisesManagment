@@ -26,9 +26,9 @@ public class CorsConfig {
                         .allowedHeaders("*");
 
                 if (frontendUrl != null && !frontendUrl.isBlank()) {
-                    mapping.allowedOrigins("http://localhost:5173", "http://localhost:3000", frontendUrl);
+                    mapping.allowedOrigins("http://localhost:5173", "http://localhost:8080", frontendUrl);
                 } else {
-                    mapping.allowedOrigins("http://localhost:5173", "http://localhost:3000");
+                    mapping.allowedOrigins("http://localhost:5173", "http://localhost:8080");
                 }
             }
         };
