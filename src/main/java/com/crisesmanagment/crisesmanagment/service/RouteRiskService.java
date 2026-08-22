@@ -33,6 +33,16 @@ public class RouteRiskService {
     private final Map<Long, Double> originalRiskBaseline = new HashMap<>();
     private final Map<Long, Double> originalShippingCost = new HashMap<>();
 
+    // NEW: last time a full sweep completed, so the frontend can show a
+    // "checked HH:MM:SS" banner on the Routes page the same way Weather
+    // Impact already does — makes it visibly obvious the numbers are live,
+    // not a static seed.
+    private volatile LocalDateTime lastSweepAt;
+
+    public LocalDateTime getLastSweepAt() {
+        return lastSweepAt;
+    }
+
     @PostConstruct
     public void captureBaselines() {
         // IMPORTANT: baselines must come from seed_risk_score / seed_shipping_cost,
@@ -63,6 +73,7 @@ public class RouteRiskService {
         for (Route r : routeRepository.findAll()) {
             recomputeRouteRisk(r.getId());
         }
+        lastSweepAt = LocalDateTime.now();
     }
 
     public void recomputeRouteRisk(Long routeId) {

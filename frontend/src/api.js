@@ -27,6 +27,7 @@ export const api = {
   getSupplier: (id) => request(`/api/suppliers/${id}`),
   getMarketStatus: () => request("/api/suppliers/market-status"),
   getRoutes: () => request("/api/routes"),
+  getRiskStatus: () => request("/api/routes/risk-status"),
   getRoute: (id) => request(`/api/routes/${id}`),
 
   // Crisis pipeline: log event -> simulate scenario -> read recommendations
