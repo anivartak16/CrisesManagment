@@ -20,6 +20,15 @@ function parseExtractedJson(raw) {
   }
 }
 
+// Whether the badge should say "Gemini" alone or "Gemini + Groq" — driven by
+// whether the backend actually had a Groq key configured for this event
+// (dualKeyComparison is only set true when both calls were made), not just
+// hardcoded to whichever model existed when this UI was first built.
+function detectionSourceLabel(extractedJson) {
+  const parsed = parseExtractedJson(extractedJson);
+  return parsed?.dualKeyComparison === true ? "Gemini + Groq" : "Gemini";
+}
+
 const FIELD_ROWS = [
   { key: "severity", label: "Severity" },
   { key: "eventType", label: "Event type" },
@@ -34,8 +43,8 @@ function ComparisonTable({ parsed }) {
       <thead>
         <tr>
           <th>Field</th>
-          <th>Primary key</th>
-          <th>Secondary key</th>
+          <th>Gemini</th>
+          <th>Groq</th>
           <th>Final (used)</th>
         </tr>
       </thead>
@@ -72,7 +81,7 @@ function ExtractionDetail({ extractedJson }) {
       {isDualKey && (
         <div style={{ marginBottom: 10 }}>
           <p className="mono" style={{ fontSize: 12, color: "var(--muted)", marginBottom: 6 }}>
-            compared across both Gemini keys — mismatched values in amber
+            compared Gemini vs. Groq — mismatched values in amber
           </p>
           <ComparisonTable parsed={parsed} />
         </div>
@@ -225,9 +234,9 @@ export default function ScenarioConsole() {
           <div className="pipe-body">
             <div className="pipe-label">Log the disruption</div>
             <p className="pipe-desc">
-              Paste raw text — a news report, cable, or field note. Gemini extracts severity,
-              event type, and the affected route automatically — leave "Affected route" on
-              auto-detect, or pick one yourself to override it.
+              Paste raw text — a news report, cable, or field note. Gemini and Groq both extract
+              severity, event type, and the affected route independently and get cross-checked —
+              leave "Affected route" on auto-detect, or pick one yourself to override it.
             </p>
 
             <div className="panel panel-pad">
@@ -247,7 +256,7 @@ export default function ScenarioConsole() {
                   <div className="field" style={{ minWidth: 200 }}>
                     <label htmlFor="routeId">Affected route</label>
                     <select id="routeId" value={routeId} onChange={(e) => setRouteId(e.target.value)}>
-                      <option value="">— auto-detect (Gemini) —</option>
+                      <option value="">— auto-detect (Gemini + Groq) —</option>
                       {routes?.map((r) => (
                         <option key={r.id} value={r.id}>{r.name}</option>
                       ))}
@@ -311,7 +320,9 @@ export default function ScenarioConsole() {
                     <span className="mono">
                       route: {event.routeName || "unmatched"}
                       {event.autoDetectedRoute && (
-                        <span style={{ color: "var(--sea, #2dd4bf)", marginLeft: 6 }}>(auto-detected by Gemini)</span>
+                        <span style={{ color: "var(--sea, #2dd4bf)", marginLeft: 6 }}>
+                          (auto-detected by {detectionSourceLabel(event.extractedJson)})
+                        </span>
                       )}
                     </span>
                   </div>
