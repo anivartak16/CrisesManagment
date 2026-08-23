@@ -32,16 +32,16 @@ export const api = {
 
   // Crisis pipeline: log event -> simulate scenario -> read recommendations
   createEvent: ({ rawText, routeId, severity, eventType, durationDays }) =>
-    request("/api/events", {
-      method: "POST",
-      body: JSON.stringify({ rawText, routeId, severity, eventType, durationDays }),
-    }),
+      request("/api/events", {
+        method: "POST",
+        body: JSON.stringify({ rawText, routeId, severity, eventType, durationDays }),
+      }),
   simulateScenario: (eventId) =>
-    request(`/api/scenarios/${eventId}/simulate`, { method: "POST" }),
+      request(`/api/scenarios/${eventId}/simulate`, { method: "POST" }),
   getScenario: (id) => request(`/api/scenarios/${id}`),
   getRecommendations: (scenarioId) => request(`/api/recommendations/${scenarioId}`),
   acceptRecommendation: (recommendationId) =>
-    request(`/api/recommendations/${recommendationId}/accept`, { method: "PATCH" }),
+      request(`/api/recommendations/${recommendationId}/accept`, { method: "PATCH" }),
 
   // Weather: which routes are currently affected by weather (wind/storms)
   getWeatherRisks: () => request("/api/weather/routes"),

@@ -27,9 +27,9 @@ real event extraction, a `GEMINI_API_KEY` set.
 - **Suppliers** (`/suppliers`) — `GET /api/suppliers`.
 - **Shipping Routes** (`/routes`) — `GET /api/routes`.
 - **Scenario Console** (`/console`) — the three-step crisis pipeline:
-  1. `POST /api/events` — log a raw report, get back the extracted event.
-  2. `POST /api/scenarios/{eventId}/simulate` — simulate its effect.
-  3. `GET /api/recommendations/{scenarioId}` — read the resulting procurement plan.
+    1. `POST /api/events` — log a raw report, get back the extracted event.
+    2. `POST /api/scenarios/{eventId}/simulate` — simulate its effect.
+    3. `GET /api/recommendations/{scenarioId}` — read the resulting procurement plan.
 
 ## Notes
 

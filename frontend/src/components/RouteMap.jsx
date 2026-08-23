@@ -1,7 +1,5 @@
 import { MapContainer, TileLayer, CircleMarker, Popup } from "react-leaflet";
-
-const severityColor = (s) =>
-    s >= 7 ? "var(--rust)" : s >= 4 ? "var(--amber)" : "var(--sea)";
+import { riskTone } from "../utils/riskColor.js";
 
 export default function RouteMap({ routes }) {
     const mappableRoutes = (routes ?? []).filter(
@@ -32,7 +30,7 @@ export default function RouteMap({ routes }) {
                     key={r.id}
                     center={[r.originLat, r.originLng]}
                     radius={8}
-                    pathOptions={{ color: severityColor(riskScore(r)), fillOpacity: 0.8 }}
+                    pathOptions={{ color: riskTone(riskScore(r)), fillOpacity: 0.8 }}
                 >
                     <Popup>
                         <strong>{r.name}</strong><br />

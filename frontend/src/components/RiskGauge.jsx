@@ -1,3 +1,5 @@
+import { riskTone } from "../utils/riskColor.js";
+
 /**
  * RiskGauge — a semicircular instrument dial modeled on a ship's engine
  * order telegraph. Used everywhere a risk/severity number appears so the
@@ -29,44 +31,44 @@ export default function RiskGauge({ value, max = 10, size = 64, label }) {
 
   const [needleX, needleY] = polarToXY(180 + angle);
 
-  let tone = "var(--sea)";
-  if (pct >= 0.75) tone = "var(--rust)";
-  else if (pct >= 0.45) tone = "var(--amber)";
+  // riskTone expects a 0–10 score, so normalize pct back onto that scale —
+  // this keeps thresholds identical to RouteMap regardless of `max`.
+  const tone = riskTone(pct * 10);
 
   return (
-    <div className="gauge">
-      <svg width={size} height={size / 2 + 8} viewBox={`0 0 ${size} ${size / 2 + 8}`}>
-        <path
-          d={arcPath(180, 360)}
-          fill="none"
-          stroke="var(--line)"
-          strokeWidth="5"
-          strokeLinecap="round"
-        />
-        <path
-          d={arcPath(180, 180 + pct * 180)}
-          fill="none"
-          stroke={tone}
-          strokeWidth="5"
-          strokeLinecap="round"
-        />
-        <line
-          x1={cx}
-          y1={cy}
-          x2={needleX}
-          y2={needleY}
-          stroke="var(--paper)"
-          strokeWidth="2"
-          strokeLinecap="round"
-        />
-        <circle cx={cx} cy={cy} r="3" fill="var(--paper)" />
-      </svg>
-      {label !== false && (
-        <div className="gauge-value">
-          <strong style={{ color: tone }}>{clamped}</strong>
-          <span style={{ color: "var(--muted)" }}> / {max}</span>
-        </div>
-      )}
-    </div>
+      <div className="gauge">
+        <svg width={size} height={size / 2 + 8} viewBox={`0 0 ${size} ${size / 2 + 8}`}>
+          <path
+              d={arcPath(180, 360)}
+              fill="none"
+              stroke="var(--line)"
+              strokeWidth="5"
+              strokeLinecap="round"
+          />
+          <path
+              d={arcPath(180, 180 + pct * 180)}
+              fill="none"
+              stroke={tone}
+              strokeWidth="5"
+              strokeLinecap="round"
+          />
+          <line
+              x1={cx}
+              y1={cy}
+              x2={needleX}
+              y2={needleY}
+              stroke="var(--paper)"
+              strokeWidth="2"
+              strokeLinecap="round"
+          />
+          <circle cx={cx} cy={cy} r="3" fill="var(--paper)" />
+        </svg>
+        {label !== false && (
+            <div className="gauge-value">
+              <strong style={{ color: tone }}>{clamped}</strong>
+              <span style={{ color: "var(--muted)" }}> / {max}</span>
+            </div>
+        )}
+      </div>
   );
 }
