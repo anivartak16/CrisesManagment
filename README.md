@@ -222,7 +222,7 @@ npm run dev
 ```
 
 Runs on `http://localhost:5173` — **this is for local development only.**
-The backend's CORS config already allows `localhost:5173` and `localhost:3000`.
+The backend's CORS config already allows `localhost:5173` and `localhost:8080`.
 
 > In production there is no separate frontend URL: the frontend isn't
 > deployed as its own service. Spring Boot serves the built React app
