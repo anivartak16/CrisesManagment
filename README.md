@@ -9,6 +9,9 @@
 ![React](https://img.shields.io/badge/React-18-61DAFB?logo=react)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-database-336791?logo=postgresql)
 ![Status](https://img.shields.io/badge/status-hackathon%20project-yellow)
+![Deployed on Railway](https://img.shields.io/badge/deployed-Railway-0B0D0E?logo=railway)
+
+### 🔗 [Live demo](https://comfortable-victory-production-584b.up.railway.app/)
 
 </div>
 
@@ -21,7 +24,8 @@
 - [Tech stack](#tech-stack)
 - [Project structure](#project-structure)
 - [API endpoints](#api-endpoints)
-- [Getting started](#getting-started)
+- [Getting started](#getting-started-local-development)
+- [Deployment](#deployment)
 - [Notes](#notes)
 
 ## What it does
@@ -100,7 +104,11 @@ frontend/src/
 | `POST` | `/api/scenarios/{eventId}/simulate` | Simulate a scenario from a risk event |
 | `GET` | `/api/recommendations/{scenarioId}` | Allocation recommendations for a scenario |
 
-## Getting started
+## Getting started (local development)
+
+> The live version is deployed on Railway (link above) as a single service —
+> you only need the steps below if you want to run it on your own machine
+> for development.
 
 ### Backend
 
@@ -138,6 +146,13 @@ npm run dev
 ```
 
 Runs on `http://localhost:5173`. The backend's CORS config already allows `localhost:5173` and `localhost:3000`.
+
+## Deployment
+
+The app runs on [Railway](https://railway.app) as a single service — the
+Spring Boot backend serves the built React frontend, so there's one deploy
+and one URL rather than separate frontend/backend hosts. Pushing to the
+tracked branch triggers a new Railway build automatically.
 
 ## Notes
 
