@@ -73,15 +73,91 @@ GDELT headlines ──▶ NewsMonitorService ──▶ GeminiExtractionService (
 ## Project structure
 
 ```
-src/main/java/.../crisesmanagment/
-├── Controller/       # REST endpoints
-├── service/          # GeminiExtractionService, NewsMonitorService, WeatherService, MarketDataService, RouteRiskService, ...
-├── optimization/      # Allocation optimization engine
-├── model/ repo/ dto/ config/ exception/
-
-frontend/src/
-├── pages/            # Dashboard, Suppliers, Routes, WeatherImpact, ScenarioConsole, History, ActivityLog
-├── components/       # RiskGauge, AllocationChart, RouteMap, StatusBadge, ErrorBanner
+CrisesManagment/
+├── .mvn/wrapper/
+│   └── maven-wrapper.properties
+├── src/
+│   ├── main/
+│   │   ├── java/com/crisesmanagment/crisesmanagment/
+│   │   │   ├── Controller/          # REST endpoints
+│   │   │   │   ├── RecommendationController.java
+│   │   │   │   ├── RiskEventController.java
+│   │   │   │   ├── RouteController.java
+│   │   │   │   ├── ScenarioController.java
+│   │   │   │   ├── StatusController.java
+│   │   │   │   ├── SupplierController.java
+│   │   │   │   └── WeatherController.java
+│   │   │   ├── config/              # CORS, Gemini, WebClient config
+│   │   │   │   ├── CorsConfig.java
+│   │   │   │   ├── GeminiConfig.java
+│   │   │   │   ├── MarketDataWebClientConfig.java
+│   │   │   │   └── WebClientConfig.java
+│   │   │   ├── dto/                 # Request/response DTOs
+│   │   │   │   ├── RecommendationDto.java
+│   │   │   │   ├── RiskEventRequestDto.java
+│   │   │   │   ├── RiskEventResponseDto.java
+│   │   │   │   ├── RiskEventSummaryDto.java
+│   │   │   │   ├── RouteResponseDto.java
+│   │   │   │   ├── RouteWeatherDto.java
+│   │   │   │   ├── ScenarioResponseDto.java
+│   │   │   │   └── SupplierResponseDto.java
+│   │   │   ├── exception/
+│   │   │   │   ├── GlobalExceptionHandler.java
+│   │   │   │   └── ResourceNotFoundException.java
+│   │   │   ├── model/                # JPA entities
+│   │   │   │   ├── ProcurementAllocation.java
+│   │   │   │   ├── Recommendation.java
+│   │   │   │   ├── RiskEvent.java
+│   │   │   │   ├── Route.java
+│   │   │   │   ├── Scenario.java
+│   │   │   │   └── Supplier.java
+│   │   │   ├── optimization/         # Allocation optimization engine
+│   │   │   │   ├── AllocationLine.java
+│   │   │   │   ├── AllocationPlan.java
+│   │   │   │   ├── OptimizationEngine.java
+│   │   │   │   ├── RiskAdjustment.java
+│   │   │   │   └── SupplierOption.java
+│   │   │   ├── repo/                 # Spring Data repositories
+│   │   │   │   ├── ProcurementAllocationRepository.java
+│   │   │   │   ├── RecommendationRepository.java
+│   │   │   │   ├── RiskEventRepository.java
+│   │   │   │   ├── RouteRepository.java
+│   │   │   │   ├── ScenarioRepository.java
+│   │   │   │   └── SupplierRepository.java
+│   │   │   ├── service/              # Business logic
+│   │   │   │   ├── GeminiExtractionService.java
+│   │   │   │   ├── MarketDataService.java
+│   │   │   │   ├── NewsMonitorService.java
+│   │   │   │   ├── RecommendationService.java
+│   │   │   │   ├── RiskEventQueryService.java
+│   │   │   │   ├── RouteRiskService.java
+│   │   │   │   ├── ScenarioSimulationService.java
+│   │   │   │   └── WeatherService.java
+│   │   │   └── CrisesManagmentApplication.java
+│   │   └── resources/
+│   │       ├── application.properties
+│   │       ├── application-local.properties.template
+│   │       └── data.sql
+│   └── test/java/com/crisesmanagment/crisesmanagment/
+│       └── CrisesManagmentApplicationTests.java
+├── frontend/
+│   ├── src/
+│   │   ├── components/               # RiskGauge, AllocationChart, RouteMap, StatusBadge, ErrorBanner
+│   │   ├── pages/                    # Dashboard, Suppliers, Routes, WeatherImpact, ScenarioConsole, History, ActivityLog, About
+│   │   ├── utils/riskColor.js
+│   │   ├── App.jsx
+│   │   ├── api.js
+│   │   ├── leafletFix.js
+│   │   ├── main.jsx
+│   │   └── styles.css
+│   ├── .env.example
+│   ├── index.html
+│   ├── package.json
+│   └── vite.config.js
+├── .gitattributes
+├── .gitignore
+├── mvnw / mvnw.cmd
+└── pom.xml
 ```
 
 ## API endpoints
@@ -106,9 +182,9 @@ frontend/src/
 
 ## Getting started (local development)
 
-> The live version is deployed on Railway (link above) as a single service —
-> you only need the steps below if you want to run it on your own machine
-> for development.
+> The live version is deployed on Railway (link above) as a **single
+> service** — you only need the steps below if you want to run it on
+> your own machine for development.
 
 ### Backend
 
@@ -145,7 +221,13 @@ npm install
 npm run dev
 ```
 
-Runs on `http://localhost:5173`. The backend's CORS config already allows `localhost:5173` and `localhost:3000`.
+Runs on `http://localhost:5173` — **this is for local development only.**
+The backend's CORS config already allows `localhost:5173` and `localhost:3000`.
+
+> In production there is no separate frontend URL: the frontend isn't
+> deployed as its own service. Spring Boot serves the built React app
+> (`npm run build` → static `dist/`), so the live app runs as a single
+> deployed service on Railway — see [Deployment](#deployment) below.
 
 ## Deployment
 
