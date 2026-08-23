@@ -11,7 +11,7 @@
 ![Status](https://img.shields.io/badge/status-hackathon%20project-yellow)
 ![Deployed on Railway](https://img.shields.io/badge/deployed-Railway-0B0D0E?logo=railway)
 
-### 🔗 [Live demo](https://comfortable-victory-production-584b.up.railway.app/)
+### 🔗 [Live demo](https://comfortable-victory-production-584b.up.railway.app/about)
 
 </div>
 
