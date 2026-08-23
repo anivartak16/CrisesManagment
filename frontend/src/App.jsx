@@ -1,12 +1,14 @@
 import { NavLink, Route, Routes as RouterRoutes } from "react-router-dom";
 import { BASE_URL } from "./api.js";
 import Dashboard from "./pages/Dashboard.jsx";
+import About from "./pages/About.jsx";
 import Suppliers from "./pages/Suppliers.jsx";
 import RoutesPage from "./pages/Routes.jsx";
 import ScenarioConsole from "./pages/ScenarioConsole.jsx";
 import WeatherImpact from "./pages/WeatherImpact.jsx";
 
 const NAV = [
+  { to: "/about", label: "About", glyph: "00" },
   { to: "/", label: "Overview", glyph: "01", end: true },
   { to: "/suppliers", label: "Suppliers", glyph: "02" },
   { to: "/routes", label: "Shipping Routes", glyph: "03" },
@@ -59,6 +61,7 @@ export default function App() {
           <div className="content">
             <RouterRoutes>
               <Route path="/" element={<Dashboard />} />
+              <Route path="/about" element={<About />} />
               <Route path="/suppliers" element={<Suppliers />} />
               <Route path="/routes" element={<RoutesPage />} />
               <Route path="/weather" element={<WeatherImpact />} />
