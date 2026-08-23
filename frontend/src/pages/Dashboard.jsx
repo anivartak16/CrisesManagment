@@ -4,6 +4,7 @@ import { api } from "../api.js";
 import ErrorBanner from "../components/ErrorBanner.jsx";
 import RiskGauge from "../components/RiskGauge.jsx";
 import RouteMap from "../components/RouteMap.jsx";
+import RouteMapLegend from "../components/RouteMapLegend.jsx";
 
 export default function Dashboard() {
     const [suppliers, setSuppliers] = useState(null);
@@ -106,6 +107,7 @@ export default function Dashboard() {
                     <p className="section-title">Route map</p>
                     <div className="panel panel-pad" style={{ marginBottom: 24 }}>
                         <RouteMap routes={routes} />
+                        <RouteMapLegend />
                     </div>
 
                     <p className="section-title">Highest-risk corridor</p>
